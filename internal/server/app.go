@@ -11,18 +11,15 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"restaurant_reservation/internal/dependencies"
-	"restaurant_reservation/internal/middleware"
 )
 
 func RunServer() {
 	container := dependencies.GetContainer()
 	server := NewServer(container)
 
+	// Initialize the server
+	server.InitServer(container)
 	e := server.server
-	e.Use(middleware.LoggerMiddleware(server.log))
-
-	// Register routes
-	server.RegisterRoutes(container, e)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
@@ -31,7 +28,6 @@ func RunServer() {
 	go gracefulShutdown(e, done)
 
 	// Start the server
-	server.log.Infof("Starting server on port %s", os.Getenv("PORT"))
 	if err := e.Start(":" + os.Getenv("PORT")); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}

@@ -2,35 +2,28 @@ package server
 
 import (
 	"go.uber.org/dig"
-	"net/http"
+
 	"restaurant_reservation/internal/restaurantreservation/handlers"
 	"restaurant_reservation/pkg/logger"
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
-func (s *Server) RegisterRoutes(container *dig.Container, e *echo.Echo) http.Handler {
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"https://*", "http://*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
-
+// registerApplicationRoutes registers the routes for the server.
+func (s *Server) registerApplicationRoutes(container *dig.Container) {
 	errInvoke := container.Invoke(func(
 		helloHandler *handlers.HelloWorldHandler,
 		healthHandler *handlers.HealthHandler,
 	) {
-		e.Add("GET", "/hello", helloHandler.HelloWorldHandler)
-		e.Add("GET", "/health", healthHandler.HealthHandler)
+		s.registerBaseRouters(helloHandler, healthHandler)
 	})
 
 	logger.Get().FatalIfError("server", "RegisterRoutes", errInvoke)
+}
 
-	return e
+// registerBaseRouters registers the routes for the server.
+func (s *Server) registerBaseRouters(helloHandler *handlers.HelloWorldHandler,
+	healthHandler *handlers.HealthHandler,
+) {
+	// base routes
+	s.server.Add("GET", "/hello", helloHandler.HelloWorldHandler)
+	s.server.Add("GET", "/health", healthHandler.HealthHandler)
 }
